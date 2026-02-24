@@ -274,16 +274,19 @@ def leave_decide(lid):
 @app.route('/payroll/create', methods=['POST'])
 @login_required
 def create_payroll():
-    f = request.form
-    code = f.get('emp_code','').strip()
-    emp = Employee.query.filter_by(emp_code=code).first()
-    if not emp: return jsonify({'ok':False,'error':'employee not found'}),404
     try:
+        f = request.form
+        code = f.get('emp_code','').strip()
+        if not code:
+            return jsonify({'ok':False,'error':'Employee code required'}),400
+        emp = Employee.query.filter_by(emp_code=code).first()
+        if not emp: return jsonify({'ok':False,'error':'employee not found'}),404
         month = f.get('month') or ''; year = int(f.get('year') or 0); net = float(f.get('net_salary') or 0)
-    except Exception as e: return jsonify({'ok':False,'error':'invalid data'}),400
-    p = Payroll(employee_id=emp.id, month=month, year=year, net_salary=net); db.session.add(p); db.session.commit()
-    log_action(current_user.username, f'payroll create {emp.emp_code} {month}/{year}')
-    return redirect(url_for('index'))
+        p = Payroll(employee_id=emp.id, month=month, year=year, net_salary=net); db.session.add(p); db.session.commit()
+        log_action(current_user.username, f'payroll create {emp.emp_code} {month}/{year}')
+        return jsonify({'ok':True,'message':'Payroll created successfully','payroll_id':p.id})
+    except Exception as e:
+        return jsonify({'ok':False,'error':str(e)}),500
 
 # Reports and exports
 @app.route('/export/employees')
