@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>EPMS – Admin Login</title>
+<title>EPMS – Secure Login</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -136,18 +136,6 @@ body{
     text-decoration:underline;
 }
 
-/* ===== Alerts ===== */
-.alert {
-    border-radius:12px;
-    margin-bottom:20px;
-}
-
-.alert-danger {
-    background:rgba(239, 68, 68, 0.2);
-    color:#ef4444;
-    border:none;
-}
-
 </style>
 </head>
 
@@ -160,16 +148,8 @@ body{
     </div>
 
     <div class="subtitle">
-        Admin Payroll Management System
+        Employee Payroll Management System
     </div>
-
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="alert alert-{{ category }}">{{ message }}</div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
 
     <form method="POST" action="{{ url_for('login') }}">
 
@@ -183,7 +163,7 @@ body{
             <input type="password" name="password" class="form-control" placeholder="Password" required>
         </div>
 
-        <button class="btn-login">Admin Login</button>
+        <button class="btn-login">Sign In</button>
 
     </form>
 
