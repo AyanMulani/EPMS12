@@ -120,6 +120,7 @@ body{
     opacity:0.5;
 }
 
+/* ===== Login Switch ===== */
 .login-switch {
     text-align:center;
     margin-top:20px;
@@ -135,12 +136,12 @@ body{
     text-decoration:underline;
 }
 
-/* ===== Alert ===== */
+/* ===== Alerts ===== */
 .alert {
-    border-radius:14px;
-    padding:12px 16px;
+    border-radius:12px;
     margin-bottom:20px;
 }
+
 </style>
 </head>
 
@@ -153,7 +154,7 @@ body{
     </div>
 
     <div class="subtitle">
-        Employee Portal - Login
+        Employee Portal Login
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -167,7 +168,7 @@ body{
     <form method="POST" action="{{ url_for('employee_login') }}">
 
         <div class="input-wrapper">
-            <i class="fa fa-id-card"></i>
+            <i class="fa fa-id-badge"></i>
             <input type="text" name="emp_code" class="form-control" placeholder="Employee Code" required>
         </div>
 
@@ -181,7 +182,7 @@ body{
     </form>
 
     <div class="login-switch">
-        <a href="{{ url_for('login') }}">← Back to Admin Login</a>
+        <a href="{{ url_for('login') }}">← Admin Login</a>
     </div>
 
     <div class="small-text">
