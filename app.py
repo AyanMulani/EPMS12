@@ -586,6 +586,38 @@ def admin_employee_passwords():
     employees = Employee.query.order_by(Employee.emp_code.asc()).all()
     return render_template('admin_employee_passwords.html', employees=employees)
 
+
+
+# Admin leave management
+@app.route('/admin/leave-requests')
+@login_required
+def admin_leave_requests():
+    """Page for admin to view and manage leave requests"""
+    leave_requests = LeaveRequest.query.order_by(LeaveRequest.id.desc()).all()
+    return render_template('admin_leave_requests.html', leave_requests=leave_requests)
+
+@app.route('/admin/leave/<int:lid>/approve', methods=['POST'])
+@login_required
+def admin_approve_leave(lid):
+    """Admin approves a leave request"""
+    lr = LeaveRequest.query.get_or_404(lid)
+    lr.status = 'approved'
+    db.session.commit()
+    log_action(current_user.username, f'approve leave {lid}')
+    flash(f'Leave request approved for {lr.employee.emp_code}', 'success')
+    return redirect(url_for('admin_leave_requests'))
+
+@app.route('/admin/leave/<int:lid>/reject', methods=['POST'])
+@login_required
+def admin_reject_leave(lid):
+    """Admin rejects a leave request"""
+    lr = LeaveRequest.query.get_or_404(lid)
+    lr.status = 'rejected'
+    db.session.commit()
+    log_action(current_user.username, f'reject leave {lid}')
+    flash(f'Leave request rejected for {lr.employee.emp_code}', 'warning')
+    return redirect(url_for('admin_leave_requests'))
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
