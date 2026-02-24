@@ -523,6 +523,36 @@ def employee_check_password():
     has_password = current_user.password_hash is not None and current_user.password_hash != ''
     return jsonify({'has_password': has_password})
 
+# Admin route to set employee password
+@app.route('/admin/set-employee-password', methods=['POST'])
+@login_required
+def admin_set_employee_password():
+    """Admin can set password for employees"""
+    f = request.form
+    emp_code = f.get('emp_code', '').strip()
+    password = f.get('password', '')
+    
+    if not emp_code or not password:
+        return jsonify({'ok': False, 'error': 'Employee code and password are required'}), 400
+    
+    emp = Employee.query.filter_by(emp_code=emp_code).first()
+    if not emp:
+        return jsonify({'ok': False, 'error': 'Employee not found'}), 404
+    
+    emp.password_hash = hash_password(password)
+    db.session.commit()
+    log_action(current_user.username, f'set_password for employee {emp_code}')
+    
+    return jsonify({'ok': True, 'message': f'Password set successfully for {emp_code}'})
+
+# Simple page for admin to manage employee passwords
+@app.route('/admin/employee-passwords')
+@login_required
+def admin_employee_passwords():
+    """Page for admin to set employee passwords"""
+    employees = Employee.query.order_by(Employee.emp_code.asc()).all()
+    return render_template('admin_employee_passwords.html', employees=employees)
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
