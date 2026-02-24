@@ -1,4 +1,3 @@
-\
 import os, datetime, io, csv, secrets
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_file, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
@@ -42,7 +41,7 @@ class Role(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), unique=True, nullable=False)
 
-class Employee(db.Model):
+class Employee(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     emp_code = db.Column(db.String(64), unique=True, nullable=False)
     first_name = db.Column(db.String(200))
@@ -54,11 +53,14 @@ class Employee(db.Model):
     email = db.Column(db.String(120))
     address = db.Column(db.Text)
     photo = db.Column(db.String(300))
-    password_hash = db.Column(db.String(200))
+    password_hash = db.Column(db.String(200), nullable=True)
     is_active = db.Column(db.Boolean, default=True)
 
     department = db.relationship('Department', backref=db.backref('employees', lazy=True))
     role = db.relationship('Role', backref=db.backref('employees', lazy=True))
+    
+    def get_id(self):
+        return str(self.id)
 
 class Attendance(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -376,15 +378,26 @@ def employee_login():
         password = request.form.get('password', '')
         
         emp = Employee.query.filter_by(emp_code=emp_code).first()
-        if emp and emp.password_hash and verify_password(emp.password_hash, password):
-            if hasattr(emp, 'is_active') and not emp.is_active:
-                flash('Account is deactivated. Contact admin.', 'danger')
-                return render_template('employee_login.html')
-            
-            login_user(emp)
-            log_action(emp.emp_code, 'employee_login')
-            return redirect(url_for('employee_dashboard'))
-        flash('Invalid employee credentials', 'danger')
+        
+        if not emp:
+            flash('Employee not found', 'danger')
+            return render_template('employee_login.html')
+        
+        if not emp.password_hash:
+            flash('Password not set. Please contact admin to set your password.', 'warning')
+            return render_template('employee_login.html')
+        
+        if not verify_password(emp.password_hash, password):
+            flash('Invalid password', 'danger')
+            return render_template('employee_login.html')
+        
+        if hasattr(emp, 'is_active') and not emp.is_active:
+            flash('Account is deactivated. Contact admin.', 'danger')
+            return render_template('employee_login.html')
+        
+        login_user(emp)
+        log_action(emp.emp_code, 'employee_login')
+        return redirect(url_for('employee_dashboard'))
     return render_template('employee_login.html')
 
 @app.route('/employee/logout')
@@ -539,11 +552,31 @@ def admin_set_employee_password():
     if not emp:
         return jsonify({'ok': False, 'error': 'Employee not found'}), 404
     
-    emp.password_hash = hash_password(password)
-    db.session.commit()
-    log_action(current_user.username, f'set_password for employee {emp_code}')
+    try:
+        emp.password_hash = generate_password_hash(password)
+        db.session.commit()
+        log_action(current_user.username, f'set_password for employee {emp_code}')
+        return jsonify({'ok': True, 'message': f'Password set successfully for {emp_code}'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+# Debug route to check employee password status
+@app.route('/debug/employee/<emp_code>')
+def debug_employee(emp_code):
+    """Debug endpoint to check employee password status"""
+    emp = Employee.query.filter_by(emp_code=emp_code).first()
+    if not emp:
+        return jsonify({'error': 'Employee not found'}), 404
     
-    return jsonify({'ok': True, 'message': f'Password set successfully for {emp_code}'})
+    return jsonify({
+        'id': emp.id,
+        'emp_code': emp.emp_code,
+        'first_name': emp.first_name,
+        'password_hash': emp.password_hash,
+        'password_hash_length': len(emp.password_hash) if emp.password_hash else 0,
+        'is_active': emp.is_active
+    })
 
 # Simple page for admin to manage employee passwords
 @app.route('/admin/employee-passwords')
