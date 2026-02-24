@@ -7,60 +7,93 @@ document.addEventListener('DOMContentLoaded', function(){
       ev.preventDefault();
       var fd = new FormData(empForm);
       fetch('/employee/add', {method:'POST', body: fd}).then(r=>r.json()).then(j=>{
-if(j.ok){
+        if(j.ok){
+          var empCode = document.getElementById('emp_code').value;
+          var firstName = document.getElementById('first_name').value;
+          var deptSelect = document.getElementById('department_id');
+          var dept = deptSelect.options[deptSelect.selectedIndex].text;
 
-  var empCode = document.getElementById('emp_code').value;
-  var firstName = document.getElementById('first_name').value;
+          // Try to save to Firebase but don't fail if it doesn't work
+          if(window.saveToFirebase){
+            try {
+              window.saveToFirebase(empCode, firstName, dept).catch(function(e){
+                console.log('Firebase save skipped:', e.message);
+              });
+            } catch(e) {
+              console.log('Firebase save skipped:', e.message);
+            }
+          }
 
-  var deptSelect = document.getElementById('department_id');
-  var dept = deptSelect.options[deptSelect.selectedIndex].text;
-
-  if(window.saveToFirebase){
-      window.saveToFirebase(empCode, firstName, dept);
-  }
-
-  document.getElementById('save_status').innerText = 'Saved: '+j.emp_code;
-  setTimeout(()=>location.reload(),700);
-}        else alert('Error: '+(j.error||'unknown'));
+          document.getElementById('save_status').innerText = 'Saved: '+j.emp_code;
+          setTimeout(()=>location.reload(),700);
+        } else {
+          alert('Error: '+(j.error||'unknown'));
+        }
       }).catch(e=>alert('Save error: '+e));
     });
   }
+  
   // search button
-  // search button
-var search = document.getElementById('search');
-if(search) search.addEventListener('click', function(){
-  var code = document.getElementById('emp_code').value.trim();
-  if(!code) return alert('Enter code');
-  fetch('/employee/search?code='+encodeURIComponent(code)).then(r=>r.json()).then(j=>{
-    if(!j.found) return alert('Not found');
-    var e=j.emp;
+  var search = document.getElementById('search');
+  if(search) search.addEventListener('click', function(){
+    var code = document.getElementById('emp_code').value.trim();
+    if(!code) return alert('Enter code');
+    fetch('/employee/search?code='+encodeURIComponent(code)).then(r=>r.json()).then(j=>{
+      if(!j.found) return alert('Not found');
+      var e=j.emp;
 
-    ['first_name','last_name','contact','email','address','basic_salary']
-    .forEach(function(k){
-      if(document.getElementById(k))
-        document.getElementById(k).value = e[k]||'';
+      ['first_name','last_name','contact','email','address','basic_salary']
+      .forEach(function(k){
+        if(document.getElementById(k))
+          document.getElementById(k).value = e[k]||'';
+      });
+
+      document.getElementById('pay_emp_code').value = e.emp_code||'';
+
+      if(document.getElementById('department_id'))
+          document.getElementById('department_id').value = e.department_id || '';
+
+      if(document.getElementById('role_id'))
+          document.getElementById('role_id').value = e.role_id || '';
+
+      document.getElementById('save_status').innerText = 'Loaded '+e.emp_code;
     });
-
-    document.getElementById('pay_emp_code').value = e.emp_code||'';
-
-    // 🔥 ADD THESE 4 LINES
-    if(document.getElementById('department_id'))
-        document.getElementById('department_id').value = e.department_id || '';
-
-    if(document.getElementById('role_id'))
-        document.getElementById('role_id').value = e.role_id || '';
-
-    document.getElementById('save_status').innerText = 'Loaded '+e.emp_code;
   });
-});
+  
   // table row click
-  document.querySelectorAll('#emp_table tbody tr').forEach(function(row){ row.addEventListener('click', function(){ document.getElementById('emp_code').value=this.cells[0].innerText.trim(); document.getElementById('search').click(); }); });
+  var empTable = document.getElementById('emp_table');
+  if(empTable){
+    empTable.querySelectorAll('tbody tr').forEach(function(row){ 
+      row.addEventListener('click', function(){ 
+        var empCode = this.cells[0].innerText.trim();
+        if(document.getElementById('emp_code')){
+          document.getElementById('emp_code').value = empCode; 
+        }
+        if(document.getElementById('search')){
+          document.getElementById('search').click(); 
+        }
+      }); 
+    });
+  }
+  
   // calculator
   var screen = document.getElementById('calc_screen');
-  document.querySelectorAll('.calc-key').forEach(function(b){ b.addEventListener('click', function(){ screen.value += this.innerText; }); });
-  document.querySelectorAll('.calc-op').forEach(function(b){ b.addEventListener('click', function(){ screen.value += ' ' + this.innerText + ' '; }); });
-  var clearCalc = document.getElementById('calc-clear'); if(clearCalc) clearCalc.addEventListener('click', function(){ screen.value = ''; });
-  var eq = document.getElementById('calc-eq'); if(eq) eq.addEventListener('click', function(){ try{ screen.value = eval(screen.value||'0'); }catch(e){ screen.value='Err'; } });
+  if(screen){
+    document.querySelectorAll('.calc-key').forEach(function(b){ 
+      b.addEventListener('click', function(){ screen.value += this.innerText; }); 
+    });
+    document.querySelectorAll('.calc-op').forEach(function(b){ 
+      b.addEventListener('click', function(){ screen.value += ' ' + this.innerText + ' '; }); 
+    });
+    var clearCalc = document.getElementById('calc-clear'); 
+    if(clearCalc) clearCalc.addEventListener('click', function(){ screen.value = ''; });
+    var eq = document.getElementById('calc-eq'); 
+    if(eq) eq.addEventListener('click', function(){ 
+      try{ screen.value = eval(screen.value||'0'); }
+      catch(e){ screen.value='Err'; } 
+    });
+  }
+  
   // calculate payroll client-side
   var calcBtn = document.getElementById('calc_btn');
   if(calcBtn) calcBtn.addEventListener('click', function(){
@@ -82,9 +115,15 @@ if(search) search.addEventListener('click', function(){
     document.getElementById('net_salary').value = net.toFixed(2);
     document.getElementById('receipt_area').innerText = 'Employee: '+document.getElementById('emp_code').value + '\nName: '+document.getElementById('first_name').value + ' ' + document.getElementById('last_name').value + '\nNet: '+net.toFixed(2);
   });
+  
   // print and download PDF guidance
-  var pr = document.getElementById('print_receipt'); if(pr) pr.addEventListener('click', function(){ window.print(); });
-  var dl = document.getElementById('download_pdf'); if(dl) dl.addEventListener('click', function(e){ e.preventDefault(); alert('Save payroll, then click PDF in payroll records to download.'); });
+  var pr = document.getElementById('print_receipt'); 
+  if(pr) pr.addEventListener('click', function(){ window.print(); });
+  var dl = document.getElementById('download_pdf'); 
+  if(dl) dl.addEventListener('click', function(e){ 
+    e.preventDefault(); 
+    alert('Save payroll, then click PDF in payroll records to download.'); 
+  });
 });
 
 
@@ -100,4 +139,3 @@ document.querySelectorAll('.emp-delete').forEach(function(btn){
       }).catch(e=>alert('Delete error: '+e));
   });
 });
-
