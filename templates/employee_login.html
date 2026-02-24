@@ -136,12 +136,6 @@ body{
     text-decoration:underline;
 }
 
-/* ===== Alerts ===== */
-.alert {
-    border-radius:12px;
-    margin-bottom:20px;
-}
-
 </style>
 </head>
 
@@ -156,14 +150,6 @@ body{
     <div class="subtitle">
         Employee Portal Login
     </div>
-
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="alert alert-{{ category }}">{{ message }}</div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
 
     <form method="POST" action="{{ url_for('employee_login') }}">
 
