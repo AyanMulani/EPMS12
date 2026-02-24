@@ -600,22 +600,30 @@ def admin_leave_requests():
 @login_required
 def admin_approve_leave(lid):
     """Admin approves a leave request"""
-    lr = LeaveRequest.query.get_or_404(lid)
-    lr.status = 'approved'
-    db.session.commit()
-    log_action(current_user.username, f'approve leave {lid}')
-    flash(f'Leave request approved for {lr.employee.emp_code}', 'success')
+    try:
+        lr = LeaveRequest.query.get_or_404(lid)
+        lr.status = 'approved'
+        db.session.commit()
+        user_name = getattr(current_user, 'username', 'admin')
+        log_action(user_name, f'approve leave {lid}')
+        flash(f'Leave request approved for {lr.employee.emp_code}', 'success')
+    except Exception as e:
+        flash(f'Error: {str(e)}', 'danger')
     return redirect(url_for('admin_leave_requests'))
 
 @app.route('/admin/leave/<int:lid>/reject', methods=['POST'])
 @login_required
 def admin_reject_leave(lid):
     """Admin rejects a leave request"""
-    lr = LeaveRequest.query.get_or_404(lid)
-    lr.status = 'rejected'
-    db.session.commit()
-    log_action(current_user.username, f'reject leave {lid}')
-    flash(f'Leave request rejected for {lr.employee.emp_code}', 'warning')
+    try:
+        lr = LeaveRequest.query.get_or_404(lid)
+        lr.status = 'rejected'
+        db.session.commit()
+        user_name = getattr(current_user, 'username', 'admin')
+        log_action(user_name, f'reject leave {lid}')
+        flash(f'Leave request rejected for {lr.employee.emp_code}', 'warning')
+    except Exception as e:
+        flash(f'Error: {str(e)}', 'danger')
     return redirect(url_for('admin_leave_requests'))
 
 if __name__ == '__main__':
