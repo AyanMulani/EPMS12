@@ -6,30 +6,50 @@ document.addEventListener('DOMContentLoaded', function(){
     empForm.addEventListener('submit', function(ev){
       ev.preventDefault();
       var fd = new FormData(empForm);
-      fetch('/employee/add', {method:'POST', body: fd}).then(r=>r.json()).then(j=>{
-        if(j.ok){
-          var empCode = document.getElementById('emp_code').value;
-          var firstName = document.getElementById('first_name').value;
-          var deptSelect = document.getElementById('department_id');
-          var dept = deptSelect.options[deptSelect.selectedIndex].text;
-
-          // Try to save to Firebase but don't fail if it doesn't work
-          if(window.saveToFirebase){
+      fetch('/employee/add', {method:'POST', body: fd})
+        .then(function(response) {
+          return response.text().then(function(text) {
             try {
-              window.saveToFirebase(empCode, firstName, dept).catch(function(e){
-                console.log('Firebase save skipped:', e.message);
-              });
+              var json = JSON.parse(text);
+              return json;
             } catch(e) {
-              console.log('Firebase save skipped:', e.message);
+              if(text.indexOf('<!doctype html>') !== -1 || text.indexOf('<html') !== -1) {
+                alert('Session expired. Please login again.');
+                window.location.href = '/login';
+                throw new Error('Session expired');
+              }
+              throw e;
             }
-          }
+          });
+        })
+        .then(function(j){
+          if(j.ok){
+            var empCode = document.getElementById('emp_code').value;
+            var firstName = document.getElementById('first_name').value;
+            var deptSelect = document.getElementById('department_id');
+            var dept = deptSelect.options[deptSelect.selectedIndex].text;
 
-          document.getElementById('save_status').innerText = 'Saved: '+j.emp_code;
-          setTimeout(()=>location.reload(),700);
-        } else {
-          alert('Error: '+(j.error||'unknown'));
-        }
-      }).catch(e=>alert('Save error: '+e));
+            if(window.saveToFirebase){
+              try {
+                window.saveToFirebase(empCode, firstName, dept).catch(function(e){
+                  console.log('Firebase save skipped:', e.message);
+                });
+              } catch(e) {
+                console.log('Firebase save skipped:', e.message);
+              }
+            }
+
+            document.getElementById('save_status').innerText = 'Saved: '+j.emp_code;
+            setTimeout(function(){location.reload();},700);
+          } else {
+            alert('Error: '+(j.error||'unknown'));
+          }
+        })
+        .catch(function(e){
+          if(e.message !== 'Session expired'){
+            alert('Save error: '+e.message);
+          }
+        });
     });
   }
   
@@ -57,7 +77,7 @@ document.addEventListener('DOMContentLoaded', function(){
           document.getElementById('role_id').value = e.role_id || '';
 
       document.getElementById('save_status').innerText = 'Loaded '+e.emp_code;
-    });
+    }).catch(e=>alert('Search error: '+e.message));
   });
   
   // table row click
@@ -73,6 +93,44 @@ document.addEventListener('DOMContentLoaded', function(){
           document.getElementById('search').click(); 
         }
       }); 
+    });
+  }
+  
+  // payroll form submit
+  var payForm = document.getElementById('payForm');
+  if(payForm){
+    payForm.addEventListener('submit', function(ev){
+      ev.preventDefault();
+      var fd = new FormData(payForm);
+      fetch('/payroll/create', {method:'POST', body: fd})
+        .then(function(response) {
+          return response.text().then(function(text) {
+            try {
+              var json = JSON.parse(text);
+              return json;
+            } catch(e) {
+              if(text.indexOf('<!doctype html>') !== -1 || text.indexOf('<html') !== -1) {
+                alert('Session expired. Please login again.');
+                window.location.href = '/login';
+                throw new Error('Session expired');
+              }
+              throw e;
+            }
+          });
+        })
+        .then(function(j){
+          if(j.ok){
+            alert('Payroll saved successfully!');
+            window.location.reload();
+          } else {
+            alert('Error: '+(j.error||'unknown'));
+          }
+        })
+        .catch(function(e){
+          if(e.message !== 'Session expired'){
+            alert('Payroll save error: '+e.message);
+          }
+        });
     });
   }
   
