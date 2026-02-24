@@ -1,0 +1,507 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>EPMS – Employee Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+
+<style>
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+}
+
+.navbar {
+    background: linear-gradient(90deg, #2f5566, #3d6a7a) !important;
+}
+
+.card {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+}
+
+.card-header {
+    background: white;
+    border-bottom: 2px solid #f0f0f0;
+    border-radius: 16px 16px 0 0 !important;
+    font-weight: 600;
+    color: #2f5566;
+    padding: 16px 20px;
+}
+
+.card-body {
+    padding: 20px;
+}
+
+.btn-primary {
+    background: linear-gradient(90deg, #3b82f6, #2563eb);
+    border: none;
+    border-radius: 10px;
+    padding: 10px 20px;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(90deg, #2563eb, #1d4ed8);
+}
+
+.btn-success {
+    background: linear-gradient(90deg, #22c55e, #16a34a);
+    border: none;
+    border-radius: 10px;
+}
+
+.btn-success:hover {
+    background: linear-gradient(90deg, #16a34a, #15803d);
+}
+
+.btn-download {
+    background: linear-gradient(90deg, #8b5cf6, #7c3aed);
+    border: none;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+}
+
+.btn-download:hover {
+    background: linear-gradient(90deg, #7c3aed, #6d28d9);
+    color: white;
+}
+
+.table {
+    margin-bottom: 0;
+}
+
+.table thead th {
+    background: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    color: #495057;
+    font-weight: 600;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.status-pending {
+    color: #f59e0b;
+    font-weight: 600;
+}
+
+.status-approved {
+    color: #22c55e;
+    font-weight: 600;
+}
+
+.status-rejected {
+    color: #ef4444;
+    font-weight: 600;
+}
+
+.profile-section {
+    text-align: center;
+    padding: 20px;
+}
+
+.profile-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6, #22c55e);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+    font-size: 32px;
+    color: white;
+}
+
+.emp-name {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 5px;
+}
+
+.emp-code {
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.emp-details {
+    text-align: left;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.emp-details .detail-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.emp-details .detail-label {
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.emp-details .detail-value {
+    color: #1f2937;
+    font-weight: 500;
+}
+
+.alert {
+    border-radius: 12px;
+}
+
+.modal-content {
+    border-radius: 16px;
+    border: none;
+}
+
+.modal-header {
+    border-radius: 16px 16px 0 0;
+    background: #f8f9fa;
+}
+
+.form-label {
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 6px;
+}
+
+.form-control, .form-select {
+    border-radius: 10px;
+    border: 1px solid #d1d5db;
+    padding: 10px 14px;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+</style>
+</head>
+
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark mb-4">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#">
+            <i class="fas fa-building me-2"></i>
+            EPMS - Employee Portal
+        </a>
+        <div class="d-flex align-items-center">
+            <span class="text-white me-3">
+                <i class="fas fa-user-circle me-1"></i>
+                {{ current_user.first_name }} {{ current_user.last_name }}
+            </span>
+            <a href="{{ url_for('employee_logout') }}" class="btn btn-outline-light btn-sm">
+                <i class="fas fa-sign-out-alt me-1"></i> Logout
+            </a>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="row">
+        <!-- Profile Section -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-id-card me-2"></i>My Profile
+                </div>
+                <div class="card-body">
+                    <div class="profile-section">
+                        <div class="profile-icon">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="emp-name">{{ current_user.first_name }} {{ current_user.last_name }}</div>
+                        <div class="emp-code">EMP Code: {{ current_user.emp_code }}</div>
+                    </div>
+                    
+                    <div class="emp-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Department</span>
+                            <span class="detail-value">{{ current_user.department.name if current_user.department else 'N/A' }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Role</span>
+                            <span class="detail-value">{{ current_user.role.name if current_user.role else 'N/A' }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Email</span>
+                            <span class="detail-value">{{ current_user.email or 'N/A' }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Contact</span>
+                            <span class="detail-value">{{ current_user.contact or 'N/A' }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Basic Salary</span>
+                            <span class="detail-value">${{ current_user.basic_salary }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Set Password Card -->
+            {% if not current_user.password_hash %}
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-key me-2"></i>Set Your Password
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small">Please set a password to login to your employee portal.</p>
+                    <form id="setPasswordForm">
+                        <div class="mb-3">
+                            <label class="form-label">Password</label>
+                            <input type="password" class="form-control" id="emp_password" required minlength="4">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Confirm Password</label>
+                            <input type="password" class="form-control" id="emp_confirm_password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-save me-1"></i> Set Password
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Salary Slips Section -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-file-invoice-dollar me-2"></i>My Salary Slips</span>
+                    <span class="badge bg-primary">{{ payrolls|length }} Records</span>
+                </div>
+                <div class="card-body">
+                    {% if payrolls %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Month</th>
+                                    <th>Year</th>
+                                    <th>Net Salary</th>
+                                    <th>Generated Date</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for p in payrolls %}
+                                <tr>
+                                    <td>{{ p.month }}</td>
+                                    <td>{{ p.year }}</td>
+                                    <td><strong>${{ "%.2f"|format(p.net_salary) }}</strong></td>
+                                    <td>{{ p.created_at.strftime('%Y-%m-%d') if p.created_at else 'N/A' }}</td>
+                                    <td>
+                                        <a href="{{ url_for('employee_download_payroll', pid=p.id) }}" class="btn btn-download btn-sm">
+                                            <i class="fas fa-download me-1"></i> Download
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-file-invoice-dollar text-muted" style="font-size: 48px;"></i>
+                        <p class="text-muted mt-3">No salary slips available yet.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Leave Request Section -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-calendar-minus me-2"></i>Leave Requests</span>
+                    <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#leaveModal">
+                        <i class="fas fa-plus me-1"></i> Request Leave
+                    </button>
+                </div>
+                <div class="card-body">
+                    {% if leaves %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Start Date</th>
+                                    <th>End Date</th>
+                                    <th>Reason</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for leave in leaves %}
+                                <tr>
+                                    <td>{{ leave.start_date.strftime('%Y-%m-%d') }}</td>
+                                    <td>{{ leave.end_date.strftime('%Y-%m-%d') }}</td>
+                                    <td>{{ leave.reason or 'No reason provided' }}</td>
+                                    <td>
+                                        <span class="status-{{ leave.status }}">
+                                            {% if leave.status == 'pending' %}
+                                                <i class="fas fa-clock me-1"></i> Pending
+                                            {% elif leave.status == 'approved' %}
+                                                <i class="fas fa-check-circle me-1"></i> Approved
+                                            {% else %}
+                                                <i class="fas fa-times-circle me-1"></i> Rejected
+                                            {% endif %}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-calendar-minus text-muted" style="font-size: 48px;"></i>
+                        <p class="text-muted mt-3">No leave requests yet.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Leave Request Modal -->
+<div class="modal fade" id="leaveModal" tabindex="-1" aria-labelledby="leaveModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="leaveModalLabel">
+                    <i class="fas fa-calendar-plus me-2"></i>Request Leave
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="leaveRequestForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Start Date</label>
+                        <input type="date" class="form-control" id="leave_start_date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">End Date</label>
+                        <input type="date" class="form-control" id="leave_end_date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Reason</label>
+                        <textarea class="form-control" id="leave_reason" rows="3" placeholder="Enter reason for leave..."></textarea>
+                    </div>
+                    <div id="leave_message"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane me-1"></i> Submit Request
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Set Password Form
+document.getElementById('setPasswordForm')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const password = document.getElementById('emp_password').value;
+    const confirm_password = document.getElementById('emp_confirm_password').value;
+    
+    if (password !== confirm_password) {
+        alert('Passwords do not match!');
+        return;
+    }
+    
+    try {
+        const formData = new FormData();
+        formData.append('password', password);
+        formData.append('confirm_password', confirm_password);
+        
+        const response = await fetch('/employee/set-password', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.ok) {
+            alert('Password set successfully! You can now use this password to login.');
+            location.reload();
+        } else {
+            alert('Error: ' + result.error);
+        }
+    } catch (error) {
+        alert('Error: ' + error.message);
+    }
+});
+
+// Leave Request Form
+document.getElementById('leaveRequestForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const start_date = document.getElementById('leave_start_date').value;
+    const end_date = document.getElementById('leave_end_date').value;
+    const reason = document.getElementById('leave_reason').value;
+    const messageDiv = document.getElementById('leave_message');
+    
+    if (!start_date || !end_date) {
+        messageDiv.innerHTML = '<div class="alert alert-danger">Please select both start and end dates.</div>';
+        return;
+    }
+    
+    try {
+        const formData = new FormData();
+        formData.append('start_date', start_date);
+        formData.append('end_date', end_date);
+        formData.append('reason', reason);
+        
+        const response = await fetch('/employee/leave/request', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.ok) {
+            messageDiv.innerHTML = '<div class="alert alert-success">' + result.message + '</div>';
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
+        } else {
+            messageDiv.innerHTML = '<div class="alert alert-danger">' + result.error + '</div>';
+        }
+    } catch (error) {
+        messageDiv.innerHTML = '<div class="alert alert-danger">Error: ' + error.message + '</div>';
+    }
+});
+</script>
+
+</body>
+</html>
