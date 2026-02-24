@@ -144,7 +144,11 @@ def login():
 @app.route('/logout')
 def logout():
     if current_user.is_authenticated:
-        log_action(current_user.username, 'logout')
+        # Handle both admin and employee users
+        if hasattr(current_user, 'username'):
+            log_action(current_user.username, 'logout')
+        elif hasattr(current_user, 'emp_code'):
+            log_action(current_user.emp_code, 'employee_logout')
     logout_user(); return redirect(url_for('login'))
 
 @app.route('/')
@@ -353,7 +357,7 @@ def admin_create():
     if Admin.query.filter_by(username=u).first(): return jsonify({'ok':False,'error':'exists'}),400
     a = Admin(username=u, password_hash=hash_password(p), role=r); db.session.add(a); db.session.commit(); log_action(current_user.username, f'create admin {u}'); return jsonify({'ok':True})
 
-# payroll PDF
+# payroll PDF - admin version (RUPEES)
 @app.route('/payroll/<int:pid>/pdf')
 @login_required
 def payroll_pdf(pid):
@@ -427,7 +431,7 @@ def employee_dashboard():
 @app.route('/employee/payroll/<int:pid>/download')
 @login_required
 def employee_download_payroll(pid):
-    """Employee can download their own salary slip"""
+    """Employee can download their own salary slip - RUPEES"""
     if not hasattr(current_user, 'emp_code'):
         flash('Access denied.', 'danger')
         return redirect(url_for('index'))
@@ -467,7 +471,7 @@ def employee_download_payroll(pid):
     c.setFont('Helvetica', 10)
     c.drawString(x, y, f'Month/Year: {p.month}/{p.year}')
     y -= 14
-    c.drawString(x, y, f'Net Salary: ${p.net_salary:.2f}')
+    c.drawString(x, y, f'Net Salary: ₹{p.net_salary:.2f}')
     y -= 25
     
     c.setFont('Helvetica-Oblique', 8)
