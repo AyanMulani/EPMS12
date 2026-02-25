@@ -154,10 +154,6 @@ def logout():
 @app.route('/')
 @login_required
 def index():
-    # Redirect employees to their dashboard
-    if hasattr(current_user, 'emp_code'):
-        return redirect(url_for('employee_dashboard'))
-    
     employees = Employee.query.order_by(Employee.emp_code.asc()).all()
     payrolls = Payroll.query.order_by(Payroll.id.desc()).limit(50).all()
     return render_template('index.html', employees=employees, payrolls=payrolls, departments=Department.query.all(), roles=Role.query.all())
@@ -383,10 +379,10 @@ def status(): return jsonify({'ok':True,'version':'hr-1.0'})
 
 @app.route('/employee/login', methods=['GET','POST'])
 def employee_login():
-    """Employee login using emp_code and password (password = first_name)"""
+    """Employee login using emp_code and password"""
     if request.method == 'POST':
         emp_code = request.form.get('emp_code', '').strip()
-        password = request.form.get('password', '').strip()
+        password = request.form.get('password', '')
         
         emp = Employee.query.filter_by(emp_code=emp_code).first()
         
@@ -394,15 +390,9 @@ def employee_login():
             flash('Employee not found', 'danger')
             return render_template('employee_login.html')
         
-        # Auto-set password to first_name if not set
         if not emp.password_hash:
-            if emp.first_name:
-                emp.password_hash = hash_password(emp.first_name)
-                db.session.commit()
-                log_action(emp.emp_code, 'auto_password_set')
-            else:
-                flash('Please contact admin - first name not set.', 'warning')
-                return render_template('employee_login.html')
+            flash('Password not set. Please contact admin to set your password.', 'warning')
+            return render_template('employee_login.html')
         
         if not verify_password(emp.password_hash, password):
             flash('Invalid password', 'danger')
