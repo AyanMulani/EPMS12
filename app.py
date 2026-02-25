@@ -123,33 +123,9 @@ def init_db():
         db.session.add(a); db.session.commit()
     # sample depts/roles
     if not Department.query.first():
-        db.session.add_all([
-            Department(name='HR'), 
-            Department(name='IT'), 
-            Department(name='Finance'),
-            Department(name='Marketing'),
-            Department(name='Sales'),
-            Department(name='Operations'),
-            Department(name='Engineering'),
-            Department(name='Customer Support'),
-            Department(name='Administration'),
-            Department(name='Legal')
-        ]); db.session.commit()
+        db.session.add_all([Department(name='HR'), Department(name='IT'), Department(name='Finance')]); db.session.commit()
     if not Role.query.first():
-        db.session.add_all([
-            Role(name='Developer'), 
-            Role(name='Manager'), 
-            Role(name='Accountant'),
-            Role(name='Software Engineer'),
-            Role(name='Project Manager'),
-            Role(name='HR Manager'),
-            Role(name='Marketing Manager'),
-            Role(name='Sales Executive'),
-            Role(name='Team Lead'),
-            Role(name='Intern'),
-            Role(name='Designer'),
-            Role(name='Data Analyst')
-        ]); db.session.commit()
+        db.session.add_all([Role(name='Developer'), Role(name='Manager'), Role(name='Accountant')]); db.session.commit()
     return 'initialized'
 
 @app.route('/login', methods=['GET','POST'])
