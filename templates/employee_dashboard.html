@@ -140,7 +140,7 @@
 <div class="card-body">
 {% if leaves %}
 <table class="table table-striped">
-<thead><tr><th>ID</th><th>Start Date</th><th>End Date</th><th>Reason</th><th>Status</th></tr></thead>
+<thead><tr><th>ID</th><th>Start Date</th><th>End Date</th><th>Reason</th><th>Status</th><th>Action</th></tr></thead>
 <tbody>
 {% for l in leaves %}
 <tr>
@@ -155,6 +155,13 @@
 <span class="badge bg-danger">Rejected</span>
 {% else %}
 <span class="badge bg-warning">Pending</span>
+{% endif %}
+</td>
+<td>
+{% if l.status == 'pending' %}
+<button class="btn btn-sm btn-danger" onclick="deleteLeave({{ l.id }})">Delete</button>
+{% else %}
+<span class="text-muted">-</span>
 {% endif %}
 </td>
 </tr>
@@ -223,6 +230,25 @@ try {
     messageDiv.innerHTML = '<div class="alert alert-danger">Error: '+e+'</div>';
 }
 });
+
+function deleteLeave(leaveId) {
+    if (!confirm('Are you sure you want to delete this leave request?')) {
+        return;
+    }
+    fetch('/employee/leave/' + leaveId + '/delete', {
+        method: 'POST'
+    })
+    .then(r => r.json())
+    .then(j => {
+        if (j.ok) {
+            alert('Leave request deleted successfully!');
+            location.reload();
+        } else {
+            alert('Error: ' + (j.error || 'unknown'));
+        }
+    })
+    .catch(e => alert('Error: ' + e));
+}
 </script>
 </body>
 </html>
