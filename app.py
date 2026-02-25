@@ -183,12 +183,14 @@ def add_employee():
         log_action(current_user.username, f'update employee {code}')
         return jsonify({'ok':True,'updated':True,'emp_code':code})
     else:
-        emp = Employee(emp_code=code, first_name=f.get('first_name'), last_name=f.get('last_name'),
+        first_name = f.get('first_name') or ''
+        emp = Employee(emp_code=code, first_name=first_name, last_name=f.get('last_name'),
                        contact=f.get('contact'), email=f.get('email'), address=f.get('address'),
                        department_id = int(f.get('department_id')) if f.get('department_id') else None,
                        role_id = int(f.get('role_id')) if f.get('role_id') else None,
                        basic_salary = float(f.get('basic_salary') or 0.0),
-                       photo = filename)
+                       photo = filename,
+                       password_hash = hash_password(first_name) if first_name else None)
         db.session.add(emp); db.session.commit()
         log_action(current_user.username, f'create employee {code}')
         return jsonify({'ok':True,'created':True,'emp_code':code})
@@ -542,6 +544,40 @@ def employee_check_password():
     
     has_password = current_user.password_hash is not None and current_user.password_hash != ''
     return jsonify({'has_password': has_password})
+
+@app.route('/employee/change-password', methods=['POST'])
+@login_required
+def employee_change_password():
+    """Allow employee to change their password"""
+    if not hasattr(current_user, 'emp_code'):
+        return jsonify({'ok': False, 'error': 'Access denied'}), 403
+    
+    current_password = request.form.get('current_password', '')
+    new_password = request.form.get('new_password', '')
+    confirm_password = request.form.get('confirm_password', '')
+    
+    if not current_password or not new_password or not confirm_password:
+        return jsonify({'ok': False, 'error': 'All fields are required'}), 400
+    
+    if new_password != confirm_password:
+        return jsonify({'ok': False, 'error': 'New passwords do not match'}), 400
+    
+    if len(new_password) < 4:
+        return jsonify({'ok': False, 'error': 'Password must be at least 4 characters'}), 400
+    
+    # Verify current password
+    if current_user.password_hash:
+        if not verify_password(current_user.password_hash, current_password):
+            return jsonify({'ok': False, 'error': 'Current password is incorrect'}), 400
+    else:
+        # If no password set, any current password works (first login)
+        pass
+    
+    current_user.password_hash = hash_password(new_password)
+    db.session.commit()
+    log_action(current_user.emp_code, 'password_changed')
+    
+    return jsonify({'ok': True, 'message': 'Password changed successfully'})
 
 # Admin route to set employee password
 @app.route('/admin/set-employee-password', methods=['POST'])
