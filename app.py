@@ -487,6 +487,32 @@ def employee_download_payroll(pid):
     
     return send_file(buf, as_attachment=True, download_name=f'salary_slip_{emp.emp_code}_{p.month}_{p.year}.pdf', mimetype='application/pdf')
 
+@app.route('/employee/leave/<int:lid>/delete', methods=['POST'])
+@login_required
+def employee_delete_leave(lid):
+    """Employee can delete their own pending leave request"""
+    if not hasattr(current_user, 'emp_code'):
+        return jsonify({'ok': False, 'error': 'Access denied'}), 403
+    
+    leave = LeaveRequest.query.get_or_404(lid)
+    
+    # Check if the leave belongs to the current employee
+    if leave.employee_id != current_user.id:
+        return jsonify({'ok': False, 'error': 'Access denied'}), 403
+    
+    # Only allow deleting pending leave requests
+    if leave.status != 'pending':
+        return jsonify({'ok': False, 'error': 'Can only delete pending leave requests'}), 400
+    
+    try:
+        db.session.delete(leave)
+        db.session.commit()
+        log_action(current_user.emp_code, f'delete leave {lid}')
+        return jsonify({'ok': True, 'message': 'Leave request deleted successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
 @app.route('/employee/leave/request', methods=['POST'])
 @login_required
 def employee_leave_request():
