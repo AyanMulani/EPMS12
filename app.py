@@ -154,6 +154,10 @@ def logout():
 @app.route('/')
 @login_required
 def index():
+    # Redirect employees to their dashboard
+    if hasattr(current_user, 'emp_code'):
+        return redirect(url_for('employee_dashboard'))
+    
     employees = Employee.query.order_by(Employee.emp_code.asc()).all()
     payrolls = Payroll.query.order_by(Payroll.id.desc()).limit(50).all()
     return render_template('index.html', employees=employees, payrolls=payrolls, departments=Department.query.all(), roles=Role.query.all())
