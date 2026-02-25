@@ -379,10 +379,10 @@ def status(): return jsonify({'ok':True,'version':'hr-1.0'})
 
 @app.route('/employee/login', methods=['GET','POST'])
 def employee_login():
-    """Employee login using emp_code and password"""
+    """Employee login using emp_code and password (password = first_name)"""
     if request.method == 'POST':
         emp_code = request.form.get('emp_code', '').strip()
-        password = request.form.get('password', '')
+        password = request.form.get('password', '').strip()
         
         emp = Employee.query.filter_by(emp_code=emp_code).first()
         
@@ -390,9 +390,15 @@ def employee_login():
             flash('Employee not found', 'danger')
             return render_template('employee_login.html')
         
+        # Auto-set password to first_name if not set
         if not emp.password_hash:
-            flash('Password not set. Please contact admin to set your password.', 'warning')
-            return render_template('employee_login.html')
+            if emp.first_name:
+                emp.password_hash = hash_password(emp.first_name)
+                db.session.commit()
+                log_action(emp.emp_code, 'auto_password_set')
+            else:
+                flash('Please contact admin - first name not set.', 'warning')
+                return render_template('employee_login.html')
         
         if not verify_password(emp.password_hash, password):
             flash('Invalid password', 'danger')
