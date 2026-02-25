@@ -155,7 +155,7 @@ def logout():
 @login_required
 def index():
     employees = Employee.query.order_by(Employee.emp_code.asc()).all()
-    payrolls = Payroll.query.order_by(Payroll.id.desc()).limit(50).all()
+    payrolls = Payroll.query.order_by(Payroll.id.asc()).limit(50).all()
     return render_template('index.html', employees=employees, payrolls=payrolls, departments=Department.query.all(), roles=Role.query.all())
 
 # Employee CRUD + photo upload
